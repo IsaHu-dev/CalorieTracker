@@ -40,7 +40,7 @@ while not done:
     # Display menu options
     print("""
     (1) Add your dinner
-    (2) Visualize progress
+    (2) View the visualisation graph
     (q) Quit
     """)
 
@@ -90,7 +90,7 @@ while not done:
     elif choice.lower() == 'q':
         # Exit the program
         done = True
-        print("Quitting the program.")
+        print("You're all set, all calories logged for the day.")
     else:
         # Handle invalid input
         print("Invalid choice, please try again.")

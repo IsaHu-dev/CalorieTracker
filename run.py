@@ -14,6 +14,9 @@ class Food:
     fat: int
     carbs: int
 
+PROTEIN_GOAL = 100
+FAT_GOAL = 70
+CARBS_GOAL = 300
 
 done = False  # Control variable to exit the main loop
 
@@ -58,8 +61,21 @@ while not done:
 
             # Create a pie chart for macronutrient distribution
             fig, axs = plt.subplots(2, 2)
-            axs[0, 0].pie([protein_sum, fats_sum, carbs_sum], labels=['Protein', 'Fats', 'Carbs'])
+            axs[0, 0].pie([protein_sum, fats_sum, carbs_sum], labels=['Protein', 'Fats', 'Carbs'], autopct="%1.1f%%")
             axs[0, 0].set_title("Macronutrient Forecast")
+            axs[0, 1].bar([0.5,1.5,2.5], [PROTEIN_GOAL, FAT_GOAL, CARBS_GOAL], width=0.4)
+            axs[0, 1].set_title("Macronutrients Progress")
+
 
             fig.tight_layout()  # Adjust layout to prevent overlap
             plt.show()  # Display the plot
+        else:
+            # If no foods have been added yet
+            print("No foods added yet to visualize progress.")
+    elif choice.lower() == 'q':
+        # Exit the program
+        done = True
+        print("Quiting the program.")
+    else:
+        # Handle invalid input
+        print("Invalid choice, please try again.")

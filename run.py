@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import gspread
 from google.oauth2.service_account import Credentials
 from pprint import pprint
+from datetime import datetime  # Import datetime to log entry date
+
 
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -15,7 +17,7 @@ CREDS = Credentials.from_service_account_file('creds.json')
 SCOPED_CREDS = CREDS.with_scopes(SCOPE)
 GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
 SHEET = GSPREAD_CLIENT.open('calorietracker')
-WORKSHEET = SHEET.worksheet("Entries")  # Replace "Entries" with your worksheet name
+WORKSHEET = SHEET.worksheet("Entries") 
 
 today = []  # List to store daily food entries
 
@@ -35,13 +37,15 @@ CARBS_GOAL = 300
 def add_to_google_sheets(food: Food):
     """Append a food entry to the Google Sheets document."""
     # Record the current date and time
-  
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     # Prepare data row for insertion
-    row = [food.name, food.calories, food.protein, food.fat, food.carbs]
+    row = [timestamp, food.name, food.calories, food.protein, food.fat, food.carbs]
     
     # Append the row to the worksheet
     WORKSHEET.append_row(row)
     print("Entry added to Google Sheets successfully.")
+
 
 done = False  # Control variable to exit the main loop
 

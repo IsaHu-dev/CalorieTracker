@@ -14,11 +14,10 @@ SCOPE = [
 CREDS = Credentials.from_service_account_file('creds.json')
 SCOPED_CREDS = CREDS.with_scopes(SCOPE)
 GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
-SHEET = GSPREAD_CLIENT.open('CalorieTracker')
-
+SHEET = GSPREAD_CLIENT.open('calorietracker')
+WORKSHEET = SHEET.worksheet("Entries")  # Replace "Entries" with your worksheet name
 
 today = []  # List to store daily food entries
-
 
 # Define a data class to represent a food item with its nutritional values
 @dataclass
@@ -33,6 +32,17 @@ PROTEIN_GOAL = 100
 FAT_GOAL = 70
 CARBS_GOAL = 300
 
+def add_to_google_sheets(food: Food):
+    """Append a food entry to the Google Sheets document."""
+    # Record the current date and time
+  
+    # Prepare data row for insertion
+    row = [food.name, food.calories, food.protein, food.fat, food.carbs]
+    
+    # Append the row to the worksheet
+    WORKSHEET.append_row(row)
+    print("Entry added to Google Sheets successfully.")
+
 done = False  # Control variable to exit the main loop
 
 # Main program loop
@@ -44,7 +54,7 @@ while not done:
     (q) Quit
     """)
 
-    choice = input("Enter your choice:")  # Get user input for choice
+    choice = input("Enter your choice: ")  # Get user input for choice
 
     if choice == "1":
         # Adding a food item
@@ -55,16 +65,20 @@ while not done:
             # Input for nutritional values
             calories = int(input("Calories: "))
             protein = int(input("Protein: "))
-            fats = int(input("Fats: "))
+            fat = int(input("Fats: "))
             carbs = int(input("Carbs: "))
 
             # Create a Food instance and add it to the list
-            food = Food(name, calories, protein, fats, carbs)
+            food = Food(name, calories, protein, fat, carbs)
             today.append(food)
             print("Successfully added!")
+            
+            # Add the food entry to Google Sheets
+            add_to_google_sheets(food)
+            
         except ValueError:
             # Handle non-numeric inputs
-            print("Please enter numeric values for calories, protein, fats, and carbs.")
+            print("Please enter numeric values (round numbers) for calories, protein, fats, and carbs.")
     elif choice == "2":
         # Visualize nutritional progress
         if today:
@@ -81,7 +95,6 @@ while not done:
             axs[0, 1].bar([0.5,1.5,2.5], [PROTEIN_GOAL, FAT_GOAL, CARBS_GOAL], width=0.4)
             axs[0, 1].set_title("Macronutrients Progress")
 
-
             fig.tight_layout()  # Adjust layout to prevent overlap
             plt.show()  # Display the plot
         else:
@@ -90,7 +103,7 @@ while not done:
     elif choice.lower() == 'q':
         # Exit the program
         done = True
-        print("You're all set, all calories logged for the day.")
+        print("Great job! You've successfully logged all your calories for the day!")
     else:
         # Handle invalid input
         print("Invalid choice, please try again.")

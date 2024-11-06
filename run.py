@@ -1,27 +1,27 @@
 from dataclasses import dataclass
-import numpy as np
-import matplotlib.pyplot as plt
+from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
-from pprint import pprint
-from datetime import datetime  # Import datetime to log entry date
 
-
+# Set up the Google Sheets API
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/drive"
 ]
-
 CREDS = Credentials.from_service_account_file('creds.json')
 SCOPED_CREDS = CREDS.with_scopes(SCOPE)
 GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
 SHEET = GSPREAD_CLIENT.open('calorietracker')
-WORKSHEET = SHEET.worksheet("Entries") 
+WORKSHEET = SHEET.worksheet("Entries")
+GOALS_WORKSHEET = SHEET.worksheet("Goal")
 
-today = []  # List to store daily food entries
+# Initialize default daily goals
+PROTEIN_GOAL = 100
+FAT_GOAL = 70
+CARBS_GOAL = 50
+CALORIE_GOAL = 2000  # New calorie goal
 
-# Define a data class to represent a food item with its nutritional values
 @dataclass
 class Food:
     name: str
@@ -30,84 +30,120 @@ class Food:
     fat: int
     carbs: int
 
-PROTEIN_GOAL = 100
-FAT_GOAL = 70
-CARBS_GOAL = 300
+    @classmethod
+    def add_food(cls, name, calories, protein, fat, carbs):
+        """Create a new food item instance and add it to the list."""
+        food = cls(name, calories, protein, fat, carbs)
+        today.append(food)
+        food.add_to_google_sheets()
+        print("Successfully added!")
+        return food
 
-def add_to_google_sheets(food: Food):
-    """Append a food entry to the Google Sheets document."""
-    # Record the current date and time
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Prepare data row for insertion
-    row = [timestamp, food.name, food.calories, food.protein, food.fat, food.carbs]
-    
-    # Append the row to the worksheet
-    WORKSHEET.append_row(row)
-    print("Entry added to Google Sheets successfully.")
+    def add_to_google_sheets(self):
+        """Append the food entry to the Google Sheets document."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        row = [timestamp, self.name, self.calories, self.protein, self.fat, self.carbs]
+        WORKSHEET.append_row(row)
+        print("Entry added to Google Sheets successfully.")
 
-
-done = False  # Control variable to exit the main loop
-
-# Main program loop
-while not done:
-    # Display menu options
-    print("""
-    (1) Add your dinner
-    (2) View the visualisation graph
-    (q) Quit
-    """)
-
-    choice = input("Enter your choice: ")  # Get user input for choice
-
-    if choice == "1":
-        # Adding a food item
-        print("What did you have for dinner?")
-        name = input("Name: ")
-
-        try:
-            # Input for nutritional values
-            calories = int(input("Calories: "))
-            protein = int(input("Protein: "))
-            fat = int(input("Fats: "))
-            carbs = int(input("Carbs: "))
-
-            # Create a Food instance and add it to the list
-            food = Food(name, calories, protein, fat, carbs)
-            today.append(food)
-            print("Successfully added!")
-            
-            # Add the food entry to Google Sheets
-            add_to_google_sheets(food)
-            
-        except ValueError:
-            # Handle non-numeric inputs
-            print("Please enter numeric values (round numbers) for calories, protein, fats, and carbs.")
-    elif choice == "2":
-        # Visualize nutritional progress
+    @staticmethod
+    def display_daily_analysis():
+        """Display the daily analysis as a percentage of the daily goals."""
         if today:
-            # Summing up the nutrients from the foods added today
-            calorie_sum = sum(food.calories for food in today)
             protein_sum = sum(food.protein for food in today)
             fats_sum = sum(food.fat for food in today)
             carbs_sum = sum(food.carbs for food in today)
+            calories_sum = sum(food.calories for food in today)
 
-            # Create a pie chart for macronutrient distribution
-            fig, axs = plt.subplots(2, 2)
-            axs[0, 0].pie([protein_sum, fats_sum, carbs_sum], labels=['Protein', 'Fats', 'Carbs'], autopct="%1.1f%%")
-            axs[0, 0].set_title("Macronutrient Forecast")
-            axs[0, 1].bar([0.5,1.5,2.5], [PROTEIN_GOAL, FAT_GOAL, CARBS_GOAL], width=0.4)
-            axs[0, 1].set_title("Macronutrients Progress")
+            protein_percentage = (protein_sum / PROTEIN_GOAL) * 100
+            fat_percentage = (fats_sum / FAT_GOAL) * 100
+            carbs_percentage = (carbs_sum / CARBS_GOAL) * 100
+            calories_percentage = (calories_sum / CALORIE_GOAL) * 100
 
-            fig.tight_layout()  # Adjust layout to prevent overlap
-            plt.show()  # Display the plot
+            print("\nDaily Nutritional Analysis:")
+            print(f"Protein: {protein_sum}g ({protein_percentage:.2f}% of goal)")
+            print(f"Fats: {fats_sum}g ({fat_percentage:.2f}% of goal)")
+            print(f"Carbs: {carbs_sum}g ({carbs_percentage:.2f}% of goal)")
+            print(f"Calories: {calories_sum}kcal ({calories_percentage:.2f}% of goal)")
+
+            Food.update_goals_sheet(protein_sum, fats_sum, carbs_sum, calories_sum)
         else:
-            # If no foods have been added yet
-            print("No foods added yet to visualize progress.")
+            print("No foods added yet for today's analysis.")
+
+    @staticmethod
+    def update_goals_sheet(protein_sum, fats_sum, carbs_sum, calories_sum):
+        """Update the goals worksheet with consumed and goal data."""
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        row = [
+            timestamp, protein_sum, fats_sum, carbs_sum, calories_sum,
+            PROTEIN_GOAL, FAT_GOAL, CARBS_GOAL, CALORIE_GOAL
+        ]
+        GOALS_WORKSHEET.append_row(row)
+        print("Daily consumed data and goals added to the goals worksheet successfully.")
+
+    @staticmethod
+    def record_new_goals():
+        """Prompt the user to enter new goal values, update them, and display the updated analysis."""
+        global PROTEIN_GOAL, FAT_GOAL, CARBS_GOAL, CALORIE_GOAL
+
+        try:
+            protein_goal = int(input("Enter your new protein goal: "))
+            fat_goal = int(input("Enter your new fat goal: "))
+            carbs_goal = int(input("Enter your new carb goal: "))
+            calorie_goal = int(input("Enter your new calorie goal: "))
+
+            # Update local goals
+            PROTEIN_GOAL = protein_goal
+            FAT_GOAL = fat_goal
+            CARBS_GOAL = carbs_goal
+            CALORIE_GOAL = calorie_goal
+            print("New goals set successfully.\n")
+
+            # Display updated daily analysis with new goals
+            Food.display_daily_analysis()
+
+        except ValueError:
+            print("Please enter valid numbers for each goal.")
+
+
+# Main Program
+today = []  # List to store daily food entries
+done = False
+
+while not done:
+    print("""
+    (1) Add your dinner
+    (2) Display your nutritional analysis
+    (3) Record new daily goals
+    (q) Quit
+    """)
+
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        name = input("Name: ")
+
+        try:
+            calories = int(input("Calories: "))
+            protein = int(input("Protein: "))1
+            fat = int(input("Fats: "))
+            carbs = int(input("Carbs: "))
+
+            # Add food instance and save it
+            Food.add_food(name, calories, protein, fat, carbs)
+
+        except ValueError:
+            print("Please enter numeric values for calories, protein, fats, and carbs.")
+
+    elif choice == "2":
+        Food.display_daily_analysis()
+
+    elif choice == "3":
+        Food.record_new_goals()
+
     elif choice.lower() == 'q':
-        # Exit the program
         done = True
         print("Great job! You've successfully logged all your calories for the day!")
+
     else:
-        # Handle invalid input
         print("Invalid choice, please try again.")

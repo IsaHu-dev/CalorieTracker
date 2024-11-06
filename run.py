@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 # Set up the Google Sheets API
 SCOPE = [
@@ -9,18 +11,14 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/drive"
 ]
+
 CREDS = Credentials.from_service_account_file('creds.json')
 SCOPED_CREDS = CREDS.with_scopes(SCOPE)
 GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
 SHEET = GSPREAD_CLIENT.open('calorietracker')
 WORKSHEET = SHEET.worksheet("Entries")
-GOALS_WORKSHEET = SHEET.worksheet("Goal")
+GOALS_WORKSHEET = SHEET.worksheet("Goal")  # Reference to the "Goal" worksheet
 
-# Initialize default daily goals
-PROTEIN_GOAL = 100
-FAT_GOAL = 70
-CARBS_GOAL = 50
-CALORIE_GOAL = 2000  # New calorie goal
 
 @dataclass
 class Food:
@@ -125,7 +123,7 @@ while not done:
 
         try:
             calories = int(input("Calories: "))
-            protein = int(input("Protein: "))1
+            protein = int(input("Protein: "))
             fat = int(input("Fats: "))
             carbs = int(input("Carbs: "))
 

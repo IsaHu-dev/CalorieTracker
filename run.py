@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import numpy as np
-import matplotlib.pyplot as plt
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
@@ -41,7 +40,7 @@ class FoodTracker:
         print("Successfully added!")
 
     def add_to_google_sheets(self, food: Food):
-        """Appends a food entry to Google Sheets."""
+        """Enters a food entry to Google Sheets."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         row = [timestamp, food.name, food.calories, food.protein, food.fat, food.carbs]
         WORKSHEET.append_row(row)
@@ -71,16 +70,34 @@ class FoodTracker:
         except ValueError:
             print("Please enter valid numbers for each goal.")
             
+    def calculate_percentage(self,consumed, goal):
+        """Function to calculate the percentage and adjust for overconsumption."""
+        if goal == 0:
+            return 0
+        percentage = (consumed / goal) * 100
+        return min(percentage, 100) if percentage <= 100 else 100 - (percentage - 100)
+
     def calculate_goal_percentage(self):
         """Calculates and displays the adjusted percentage of daily goals reached based on consumed amounts."""
         protein_sum = sum(food.protein for food in self.today)
         fats_sum = sum(food.fat for food in self.today)
         carbs_sum = sum(food.carbs for food in self.today)
         
-        self.update_goals_sheet()
-        print("New goals set and logged successfully.")
+        # Calculate and store scores
+        protein_score = self.calculate_percentage(protein_sum, self.protein_goal)
+        fat_score = self.calculate_percentage(fats_sum, self.fat_goal)
+        carbs_score = self.calculate_percentage(carbs_sum, self.carbs_goal)
+
+        # Display the results
         print("\nDaily Goal Achievement:")
-   
+        print(f"Protein: {protein_score:.2f}% of goal reached")
+        print(f"Fat: {fat_score:.2f}% of goal reached")
+        print(f"Carbs: {carbs_score:.2f}% of goal reached\n")
+
+        # Update goals in the sheet
+        self.update_goals_sheet()
+        
+
     def main_menu(self):
         """Displays the main menu and processes user choices."""
         done = False

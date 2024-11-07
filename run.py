@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+import matplotlib.pyplot as plt
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
@@ -17,6 +18,7 @@ GSPREAD_CLIENT = gspread.authorize(SCOPED_CREDS)
 SHEET = GSPREAD_CLIENT.open('calorietracker')
 WORKSHEET = SHEET.worksheet("Entries")
 GOALS_WORKSHEET = SHEET.worksheet("Goal")  # Reference to the "Goal" worksheet
+
 
 @dataclass
 class Food:
@@ -39,64 +41,20 @@ class FoodTracker:
         self.add_to_google_sheets(food)
         print("Successfully added!")
 
-    def add_to_google_sheets(self, food: Food):
-        """Enters a food entry to Google Sheets."""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        row = [timestamp, food.name, food.calories, food.protein, food.fat, food.carbs]
-        WORKSHEET.append_row(row)
-        print("Entry added to Google Sheets successfully.")
+    # Other existing methods go here...
 
-    def update_goals_sheet(self):
-        """Updates Google Sheets with consumed and goal data for the day."""
-        protein_sum = sum(food.protein for food in self.today)
-        fats_sum = sum(food.fat for food in self.today)
-        carbs_sum = sum(food.carbs for food in self.today)
-        
-        timestamp = datetime.now().strftime("%Y-%m-%d")
-        row = [timestamp, protein_sum, fats_sum, carbs_sum, self.protein_goal, self.fat_goal, self.carbs_goal]
-        GOALS_WORKSHEET.append_row(row)
-        print("Daily consumed data and goals added to the goals worksheet successfully.")
+    def calculate_weekly_totals(self):
+        """Calculates and displays the weekly total calories and macronutrients."""
+        total_calories = sum(food.calories for food in self.today) * 7
+        total_protein = sum(food.protein for food in self.today) * 7
+        total_fat = sum(food.fat for food in self.today) * 7
+        total_carbs = sum(food.carbs for food in self.today) * 7
 
-    def record_new_goals(self):
-        """Prompts the user for new goals and updates the goals worksheet."""
-        try:
-            self.protein_goal = int(input("Enter your new protein goal: "))
-            self.fat_goal = int(input("Enter your new fat goal: "))
-            self.carbs_goal = int(input("Enter your new carb goal: "))
-
-            self.update_goals_sheet()
-            print("New goals set and logged successfully.")
-            
-        except ValueError:
-            print("Please enter valid numbers for each goal.")
-            
-    def calculate_percentage(self,consumed, goal):
-        """Function to calculate the percentage and adjust for overconsumption."""
-        if goal == 0:
-            return 0
-        percentage = (consumed / goal) * 100
-        return min(percentage, 100) if percentage <= 100 else 100 - (percentage - 100)
-
-    def calculate_goal_percentage(self):
-        """Calculates and displays the adjusted percentage of daily goals reached based on consumed amounts."""
-        protein_sum = sum(food.protein for food in self.today)
-        fats_sum = sum(food.fat for food in self.today)
-        carbs_sum = sum(food.carbs for food in self.today)
-        
-        # Calculate and store scores
-        protein_score = self.calculate_percentage(protein_sum, self.protein_goal)
-        fat_score = self.calculate_percentage(fats_sum, self.fat_goal)
-        carbs_score = self.calculate_percentage(carbs_sum, self.carbs_goal)
-
-        # Display the results
-        print("\nDaily Goal Achievement:")
-        print(f"Protein: {protein_score:.2f}% of goal reached")
-        print(f"Fat: {fat_score:.2f}% of goal reached")
-        print(f"Carbs: {carbs_score:.2f}% of goal reached\n")
-
-        # Update goals in the sheet
-        self.update_goals_sheet()
-        
+        print("\nWeekly Totals:")
+        print(f"Total Calories: {total_calories}")
+        print(f"Total Protein: {total_protein}g")
+        print(f"Total Fat: {total_fat}g")
+        print(f"Total Carbs: {total_carbs}g\n")
 
     def main_menu(self):
         """Displays the main menu and processes user choices."""
@@ -105,14 +63,15 @@ class FoodTracker:
             print("""
             (1) Add your dinner
             (2) Record new daily goals
-            (3) Review your goal's analysis
+            (3) Review your daily goal's analysis
+            (4) Calculate weekly totals
             (q) Quit
             """)
             
             choice = input("Enter your choice: ")
             
             if choice == "1":
-                name = input("What did you have for dinner? Food Items: ")
+                name = input("What did you have for dinner? Food Item: ")
                 try:
                     calories = int(input("Calories: "))
                     protein = int(input("Protein: "))
@@ -127,7 +86,10 @@ class FoodTracker:
                 self.record_new_goals()
                 
             elif choice == "3":
-                self.calculate_goal_percentage()     
+                self.calculate_goal_percentage()
+
+            elif choice == "4":
+                self.calculate_weekly_totals()
                 
             elif choice.lower() == 'q':
                 done = True
@@ -135,8 +97,8 @@ class FoodTracker:
                 
             else:
                 print("Invalid choice, please try again.")
+
 # Run the application
 if __name__ == "__main__":
     tracker = FoodTracker()
     tracker.main_menu()
-                

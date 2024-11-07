@@ -70,7 +70,17 @@ class FoodTracker:
             
         except ValueError:
             print("Please enter valid numbers for each goal.")
-
+            
+    def calculate_goal_percentage(self):
+        """Calculates and displays the adjusted percentage of daily goals reached based on consumed amounts."""
+        protein_sum = sum(food.protein for food in self.today)
+        fats_sum = sum(food.fat for food in self.today)
+        carbs_sum = sum(food.carbs for food in self.today)
+        
+        self.update_goals_sheet()
+        print("New goals set and logged successfully.")
+        print("\nDaily Goal Achievement:")
+   
     def main_menu(self):
         """Displays the main menu and processes user choices."""
         done = False
@@ -78,13 +88,14 @@ class FoodTracker:
             print("""
             (1) Add your dinner
             (2) Record new daily goals
+            (3) Review your goal's analysis
             (q) Quit
             """)
             
             choice = input("Enter your choice: ")
             
             if choice == "1":
-                name = input("What did you have for dinner? Name: ")
+                name = input("What did you have for dinner? Food Items: ")
                 try:
                     calories = int(input("Calories: "))
                     protein = int(input("Protein: "))
@@ -97,6 +108,9 @@ class FoodTracker:
                     
             elif choice == "2":
                 self.record_new_goals()
+                
+            elif choice == "3":
+                self.calculate_goal_percentage()     
                 
             elif choice.lower() == 'q':
                 done = True

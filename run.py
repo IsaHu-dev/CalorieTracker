@@ -157,14 +157,22 @@ class FoodTracker:
             choice = input("Enter your choice: ")
             
             if choice == "1":
-                name = input("What did you have for dinner? Food Item: ")
-                try:
-                    calories = int(input("Calories: "))
-                    protein = int(input("Protein: "))
-                    fat = int(input("Fats: "))
-                    carbs = int(input("Carbs: "))
-                    food = Food(name, calories, protein, fat, carbs)
-                    self.add_food(food)
+                food name = input("What did you have for dinner? Food Item: ")
+                
+                use_api = input("Do you know the calorie and macronutrient values? (y/n): ").strip().lower()
+                
+                if use_api == 'n':
+                    food = self.fetch_nutrition(food_name)
+                    if food:
+                        self.add_food(food)
+                else:
+                    try:
+                        calories = int(input("Calories: "))
+                        protein = int(input("Protein: "))
+                        fat = int(input("Fats: "))
+                        carbs = int(input("Carbs: "))
+                        food = Food(name, calories, protein, fat, carbs)
+                        self.add_food(food)
                 except ValueError:
                     print("Please enter numeric values (round numbers) for calories, protein, fats, and carbs.")
                     

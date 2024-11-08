@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-import numpy as np
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
+import requests  # Import requests for making API calls
 
 # Set up the Google Sheets API
 SCOPE = [
@@ -18,6 +18,9 @@ SHEET = GSPREAD_CLIENT.open('calorietracker')
 WORKSHEET = SHEET.worksheet("Entries")
 GOALS_WORKSHEET = SHEET.worksheet("Goal")  # Reference to the "Goal" worksheet
 WEEKTOTAL_WORKSHEET = SHEET.worksheet("WeekTotal")  # Reference to the "Week Totols" worksheet
+
+API_KEY = "0brAMYcW8oY8uL4wFW6pEA==5CQZgsWVqQWDKyCr"
+API_URL = "https://api.calorieninjas.com/v1/nutrition"
 
 @dataclass
 class Food:
@@ -137,7 +140,9 @@ class FoodTracker:
                     fat=int(item.get("fat_total_g", 0)),
                     carbs=int(item.get("carbohydrates_total_g", 0))
                 )
-            return None
+            else:
+                print("No nutrition data found for this item")    
+                return None
         except requests.RequestException as e:
             print(f"Error fetching nutrition data: {e}")
             return None    
@@ -157,7 +162,7 @@ class FoodTracker:
             choice = input("Enter your choice: ")
             
             if choice == "1":
-                food name = input("What did you have for dinner? Food Item: ")
+                food_name = input("What did you have for dinner? Food Item: ")
                 
                 use_api = input("Do you know the calorie and macronutrient values? (y/n): ").strip().lower()
                 
@@ -171,10 +176,10 @@ class FoodTracker:
                         protein = int(input("Protein: "))
                         fat = int(input("Fats: "))
                         carbs = int(input("Carbs: "))
-                        food = Food(name, calories, protein, fat, carbs)
+                        food = Food(food_name, calories, protein, fat, carbs)
                         self.add_food(food)
-                except ValueError:
-                    print("Please enter numeric values (round numbers) for calories, protein, fats, and carbs.")
+                    except ValueError:
+                        print("Please enter numeric values (round numbers) for calories, protein, fats, and carbs.")
                     
             elif choice == "2":
                 self.record_new_goals()

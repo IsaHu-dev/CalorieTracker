@@ -98,13 +98,13 @@ class FoodTracker:
         self.update_goals_sheet()    
         
     def calculate_weekly_totals(self):
-        #Calculate weekly totals for calories and macronutrients. 
-
+        """Calculate weekly totals for calories and macronutrients."""
+        #Calculate weekly totals by summing daily entries and multiplying by 7
+        
         total_calories = sum(food.calories for food in self.today) * 7
         total_protein = sum(food.protein for food in self.today) * 7
         total_fat = sum(food.fat for food in self.today) * 7
         total_carbs = sum(food.carbs for food in self.today) * 7
-        self.add_to_google_sheets(food)
        
     # Record the weekly totals in the Google Sheets "Goal" worksheet
         timestamp = datetime.now().strftime("%Y-%m-%d")

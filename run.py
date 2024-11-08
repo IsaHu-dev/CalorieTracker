@@ -119,6 +119,29 @@ class FoodTracker:
         print(f"Total Fat: {total_fat}g")
         print(f"Total Carbs: {total_carbs}g\n")
 
+    def fetch_nutrition(self, food_name):
+        headers = {"X-Api-Key": API_KEY}
+        params = {"query": food_name}
+        
+        try:
+            response = requests.get(API_URL, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data["items"]:
+                item = data["items"][0]
+                return Food(
+                    name=food_name,
+                    calories=int(item.get("calories", 0)),
+                    protein=int(item.get("protein_g", 0)),
+                    fat=int(item.get("fat_total_g", 0)),
+                    carbs=int(item.get("carbohydrates_total_g", 0))
+                )
+            return None
+        except requests.RequestException as e:
+            print(f"Error fetching nutrition data: {e}")
+            return None    
+        
     def main_menu(self):
         """Displays the main menu and processes user choices."""
         done = False
